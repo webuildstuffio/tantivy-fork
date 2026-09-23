@@ -155,6 +155,13 @@ extern crate log;
 #[macro_use]
 extern crate thiserror;
 
+// Test-only: the `json!` literal macro used across unit-test bodies. With
+// lru 0.18 in the tree this must be explicit (was previously satisfied
+// transitively via an older serde_json prelude path).
+#[cfg(test)]
+#[macro_use]
+extern crate serde_json;
+
 #[cfg(all(test, feature = "unstable"))]
 extern crate test;
 
