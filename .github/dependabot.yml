@@ -41,7 +41,15 @@ updates:
     rebase-strategy: "auto"
     open-pull-requests-limit: 10
     groups:
-      all-actions:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+      actions-major:
+        update-types:
+          - "major"
         patterns:
           - "*"
     labels:
