@@ -1,15 +1,53 @@
+---
+# webuildstuffio org standard — Rust variant (cargo)
+# No native age gate for Cargo; rely on committed Cargo.lock + --locked installs.
 version: 2
 updates:
-- package-ecosystem: cargo
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "20:00"
-  open-pull-requests-limit: 10
+  - package-ecosystem: "cargo"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "05:00"
+    versioning-strategy: increase-if-necessary
+    open-pull-requests-limit: 10
+    rebase-strategy: "auto"
+    groups:
+      all-dependencies:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "*"
+      major-updates:
+        update-types:
+          - "major"
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "cargo"
+      - "monthly-update"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
 
-- package-ecosystem: "github-actions"
-  directory: "/"
-  schedule:
-    interval: daily
-    time: "20:00"
-  open-pull-requests-limit: 10
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "monday"
+      time: "05:00"
+    rebase-strategy: "auto"
+    open-pull-requests-limit: 10
+    groups:
+      all-actions:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "monthly-update"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
