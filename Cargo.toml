@@ -226,7 +226,7 @@ version = "1.0"
 version = "1.5.0"
 
 [dependencies.base64]
-version = "0.22.0"
+version = "0.23.1"
 
 [dependencies.bitpacking]
 version = "0.9.3"
