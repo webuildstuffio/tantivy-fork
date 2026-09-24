@@ -435,7 +435,7 @@ version = "1.7.0"
 version = "0.9"
 
 [dev-dependencies.rand_distr]
-version = "0.5"
+version = "0.6"
 
 [dev-dependencies.test-log]
 version = "0.2.10"
