@@ -315,7 +315,7 @@ optional = true
 version = "1.10.0"
 
 [dependencies.oneshot]
-version = "0.1.13"
+version = "0.2.1"
 
 [dependencies.query-grammar]
 version = "0.26.0"
