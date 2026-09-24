@@ -394,7 +394,7 @@ features = [
 ]
 
 [dependencies.zstd]
-version = "0.13"
+version = "0.14"
 optional = true
 default-features = false
 
