@@ -44,6 +44,9 @@ jobs:
       run: cargo build --all-features
 
 
+    - name: Fetch hdfs.json benchmark fixture
+      run: curl -sSL -o benches/hdfs.json https://raw.githubusercontent.com/quickwit-oss/tantivy/main/benches/hdfs.json  # yamllint disable-line rule:line-length
+
     - name: Check Bench Compilation
       run: cargo +nightly bench --no-run --profile=dev --all-features
 
