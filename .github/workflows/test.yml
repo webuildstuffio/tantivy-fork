@@ -22,30 +22,27 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install nightly
-        uses: actions-rust-lang/rustup@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           # Pinned: the fmt gate runs on nightly rustfmt, whose output
           # drifts with every nightly release. A floating nightly
           # re-breaks `check` on unrelated PRs (e.g. Dependabot bumps).
-          # Re-pin deliberately and re-run `cargo +nightly fmt --all`
-          # with the pinned toolchain.
-          # (actions-rust-lang/rustup is the maintained fork of the
+          # Re-pin deliberately and re-run `cargo fmt --all` with the
+          # pinned toolchain. (dtolnay/rust-toolchain replaces the
           # archived actions-rs/toolchain.)
           toolchain: nightly-2026-09-23
-          profile: minimal
           components: rustfmt
 
       - name: Install stable
-        uses: actions-rust-lang/rustup@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
           components: clippy
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Check Formatting
-        run: cargo +nightly fmt --all -- --check
+        run: cargo +nightly-2026-09-23 fmt --all -- --check
 
       - name: Check Stable Compilation
         run: cargo build --all-features
@@ -64,7 +61,9 @@ jobs:
           ls -la benches/*.json benches/*.txt
 
       - name: Check Bench Compilation
-        run: cargo +nightly bench --no-run --profile=dev --all-features
+        run: >
+          cargo +nightly-2026-09-23 bench --no-run
+          --profile=dev --all-features
 
       - name: Check Clippy
         # actions-rs/clippy-check was archived; run clippy directly.
@@ -87,11 +86,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install stable
-        uses: actions-rust-lang/rustup@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
-          profile: minimal
-          override: true
 
       - uses: taiki-e/install-action@nextest
       - uses: Swatinem/rust-cache@v2
