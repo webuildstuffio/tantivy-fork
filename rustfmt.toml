@@ -5,3 +5,8 @@ imports_granularity = "Module"
 normalize_comments = true
 where_single_line = true
 wrap_comments = true
+
+# Vendored upstream module (tantivy 0.26.0, unmodified by the fork):
+# exempt from the fmt gate so the fork's diff vs upstream stays minimal.
+# Revisit if the fork ever modifies this file.
+ignore = ["src/aggregation/bucket/term_agg.rs"]
