@@ -1,9 +1,11 @@
 # Qodo AI Code Suggestions v3.0
 # Inline code suggestions only — the highest-value, lowest-noise output.
 # All config lives in webuildstuffio/pr-agent-settings/.pr_agent.toml (global)
-# and per-repo .pr_agent.toml (overrides). This workflow is intentionally minimal.
+# and per-repo .pr_agent.toml (overrides). This workflow is intentionally
+# minimal.
 #
-# Model: openrouter/free — eternal router, auto-picks any live free model, never rots.
+# Model: openrouter/free — eternal router, auto-picks any live free model,
+# never rots.
 # /review and /describe available via manual /command in PR comments.
 #
 # CHANGELOG:
@@ -93,7 +95,8 @@ jobs:
         env:
           OPENROUTER__KEY: ${{ secrets.QODO_OPENROUTER_API_KEY }}
           OPENROUTER__API_BASE: >-
-            https://gateway.ai.cloudflare.com/v1/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/${{
+            https://gateway.ai.cloudflare.com/v1/${{
+              secrets.CLOUDFLARE_ACCOUNT_ID }}/${{
               secrets.QODO_CLOUDFLARE_GATEWAY_NAME
             }}/openrouter/v1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
