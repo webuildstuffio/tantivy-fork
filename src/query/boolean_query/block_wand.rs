@@ -39,8 +39,8 @@ fn maxscore_essential_boundary(scorers: &[TermScorerWithMaxScore<'_>], threshold
 ///
 /// The term-centric approach:
 /// 1. Essential terms (high max-score) identify the next candidate doc (lowest among them).
-/// 2. Non-essential terms are batch-sought to that candidate in one pass — all accesses to
-///    the same posting list before moving to the next (cache / branch-predictor friendly).
+/// 2. Non-essential terms are batch-sought to that candidate in one pass — all accesses to the same
+///    posting list before moving to the next (cache / branch-predictor friendly).
 /// 3. After scoring, all scorers at the candidate doc are advanced together.
 fn maxscore_loop(
     scorers: &mut Vec<TermScorerWithMaxScore<'_>>,
@@ -759,8 +759,10 @@ mod tests {
         let mut checkpoints: Vec<(DocId, Score)> = Vec::new();
         let mut limit: Score = 0.0;
 
-        let mut scorers: Vec<super::TermScorerWithMaxScore<'_>> =
-            term_scorers.iter_mut().map(super::TermScorerWithMaxScore::from).collect();
+        let mut scorers: Vec<super::TermScorerWithMaxScore<'_>> = term_scorers
+            .iter_mut()
+            .map(super::TermScorerWithMaxScore::from)
+            .collect();
         scorers.sort_by(|a, b| {
             a.max_score
                 .partial_cmp(&b.max_score)
@@ -819,8 +821,7 @@ mod tests {
             .cloned()
             .map(|fieldnorm| fieldnorm as u64)
             .sum();
-        let average_fieldnorm =
-            (total_fieldnorms as Score) / (fieldnorms_expanded.len() as Score);
+        let average_fieldnorm = (total_fieldnorms as Score) / (fieldnorms_expanded.len() as Score);
         let max_doc = fieldnorms_expanded.len();
         let term_scorers: Vec<TermScorer> = postings_lists_expanded
             .iter()
@@ -834,8 +835,7 @@ mod tests {
             })
             .collect();
         for top_k in 1..4 {
-            let checkpoints_maxscore =
-                compute_checkpoints_maxscore(term_scorers.clone(), top_k);
+            let checkpoints_maxscore = compute_checkpoints_maxscore(term_scorers.clone(), top_k);
             let checkpoints_manual =
                 compute_checkpoints_manual(term_scorers.clone(), top_k, max_doc as u32);
             assert_eq!(
@@ -878,7 +878,8 @@ mod tests {
         test_maxscore_equiv_aux(&[posting_list], &fieldnorms);
     }
 
-    /// SPD-107 shipped gate: term-centric MaxScore replaces WAND when scorer count ≥ this threshold.
+    /// SPD-107 shipped gate: term-centric MaxScore replaces WAND when scorer count ≥ this
+    /// threshold.
     #[test]
     fn test_maxscore_min_terms_shipped_value() {
         assert_eq!(super::MAXSCORE_MIN_TERMS, 4);
