@@ -399,7 +399,7 @@ optional = true
 default-features = false
 
 [dev-dependencies.binggan]
-version = "0.15.3"
+version = "0.17.0"
 
 [dev-dependencies.fail]
 version = "0.5.0"
