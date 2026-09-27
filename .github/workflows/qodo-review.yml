@@ -1,0 +1,108 @@
+# Qodo AI Code Suggestions v3.0
+# Inline code suggestions only — the highest-value, lowest-noise output.
+# All config lives in webuildstuffio/pr-agent-settings/.pr_agent.toml (global)
+# and per-repo .pr_agent.toml (overrides). This workflow is intentionally
+# minimal.
+#
+# Model: openrouter/free — eternal router, auto-picks any live free model,
+# never rots.
+# /review and /describe available via manual /command in PR comments.
+#
+# CHANGELOG:
+# v3.0.0: (Sep 26 2026) Simplified from v2.29.1.
+#          - Removed Mega Reviewer job (no auto /review /describe)
+#          - Single job: /improve → inline code suggestions only
+#          - openrouter/free as primary model (eternal, no rot)
+#          - All config moved to global pr-agent-settings repo
+#          - Removed label management (was noisy)
+#          - Removed custom instructions loader (repo_context_files handles it)
+#          - Docker cache kept (shared monthly key)
+#          - Dependabot/bot PRs still skipped
+# v2.29.1: Use ${#var} instead of echo|wc -c (SC2000)
+# v2.29.0: Dependabot skip + cache fix
+# v2.28.0: Strict mode + v0.46 new features
+
+name: Qodo AI Code Suggestions
+
+"on":
+  pull_request:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number (empty = latest open PR)"
+        required: false
+        type: string
+
+jobs:
+  suggest:
+    if: >-
+      ${{
+        (
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.draft == false &&
+          github.event.pull_request.user.login != 'dependabot[bot]' &&
+          !startsWith(github.event.pull_request.head.ref, 'dependabot/')
+        ) ||
+        (github.event_name == 'workflow_dispatch') ||
+        (
+          github.event_name == 'issue_comment' &&
+          github.event.issue.pull_request &&
+          (
+            contains(github.event.comment.body, '/improve') ||
+            contains(github.event.comment.body, '/review') ||
+            contains(github.event.comment.body, '/describe')
+          )
+        )
+      }}
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 8
+    continue-on-error: true
+    permissions:
+      issues: write
+      pull-requests: write
+      contents: read
+    name: Code Suggestions (openrouter/free)
+    steps:
+      - name: Docker Cache
+        uses: actions/cache@v6
+        with:
+          path: /var/lib/docker
+          key: qodo-docker-v1
+          restore-keys: qodo-docker-
+
+      - name: Set PR for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const n = '${{ github.event.inputs.pr_number }}';
+            if (n) { core.exportVariable('TARGET_PR', n); return; }
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', sort: 'updated', direction: 'desc', per_page: 1
+            });
+            if (prs.length) { core.exportVariable('TARGET_PR', prs[0].number); }
+            else { core.setFailed('No open PRs'); }
+
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Run Qodo /improve
+        uses: qodo-ai/pr-agent@v0.46.0
+        env:
+          OPENROUTER__KEY: ${{ secrets.QODO_OPENROUTER_API_KEY }}
+          OPENROUTER__API_BASE: >-
+            https://gateway.ai.cloudflare.com/v1/${{
+              secrets.CLOUDFLARE_ACCOUNT_ID }}/${{
+              secrets.QODO_CLOUDFLARE_GATEWAY_NAME
+            }}/openrouter/v1
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          config.model: "openrouter/free"
+          config.fallback_models: "[]"
+          CONFIG__CUSTOM_MODEL_MAX_TOKENS: "131072"
+          github_action_config.auto_improve: "true"
+          github_action_config.auto_review: "false"
+          github_action_config.auto_describe: "false"
