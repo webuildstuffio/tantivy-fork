@@ -15,3 +15,8 @@ trace.dat
 cargo-timing*
 control
 variable
+
+# Benchmark data fixtures: fetched from upstream in CI (check job),
+# not committed to the fork.
+/benches/*.json
+/benches/alice.txt
