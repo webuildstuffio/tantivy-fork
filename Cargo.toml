@@ -226,7 +226,7 @@ version = "1.0"
 version = "1.5.0"
 
 [dependencies.base64]
-version = "0.22.0"
+version = "0.23.1"
 
 [dependencies.bitpacking]
 version = "0.9.3"
@@ -288,7 +288,7 @@ optional = true
 version = "0.3.1"
 
 [dependencies.itertools]
-version = "0.14.0"
+version = "0.15.0"
 
 [dependencies.levenshtein_automata]
 version = "0.2.1"
@@ -394,12 +394,12 @@ features = [
 ]
 
 [dependencies.zstd]
-version = "0.13"
+version = "0.14"
 optional = true
 default-features = false
 
 [dev-dependencies.binggan]
-version = "0.15.3"
+version = "0.17.0"
 
 [dev-dependencies.fail]
 version = "0.5.0"
@@ -448,7 +448,7 @@ features = [
 ]
 
 [target."cfg(not(windows))".dev-dependencies.criterion]
-version = "0.5"
+version = "0.8"
 default-features = false
 
 [target."cfg(windows)".dependencies.winapi]

@@ -1,0 +1,6 @@
+# Custom self-hosted runner labels used across this org.
+# Ubicloud provides GitHub-hosted-class runners under the `ubicloud-*` labels;
+# without this file actionlint fails every workflow that uses them.
+self-hosted-runner:
+  labels:
+    - ubicloud-standard-2
