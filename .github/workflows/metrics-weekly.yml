@@ -1,0 +1,16 @@
+---
+name: metrics-weekly
+"on":
+  schedule:
+    - cron: "0 13 * * 0"  # Sundays 09:00 ET
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  snapshot:
+    uses: webuildstuffio/repo-review/.github/workflows/metrics-reusable.yml@083663ffe1d65a3bd761e9cea8b4bf09ae405d9d  # yamllint disable-line rule:line-length
+    with:
+      run_snapshot: true
+      language: rust
+    secrets: inherit
