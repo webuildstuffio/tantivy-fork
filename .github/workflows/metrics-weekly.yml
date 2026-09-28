@@ -108,8 +108,12 @@ jobs:
           # qlty init FIRST (sequential): it creates qlty.toml, and
           # scc must see a stable file set — parallel init is racy.
           if [ "$LANGUAGE" != "none" ]; then
+            # --no-upgrade-check: qlty's update check hangs/fails where the
+            # network blocks it; fall back for old qlty. Synced from
+            # repo-review metrics-reusable.yml at f2c8454.
             [ -f qlty.toml ] || \
-              qlty init -y --skip-plugins >/dev/null 2>&1
+              qlty init -y --skip-plugins --no-upgrade-check >/dev/null 2>&1 \
+              || qlty init -y --skip-plugins >/dev/null 2>&1
           fi
           echo "--- collecting (parallel) ---"
           # 1. LOC + files + per-file breakdown (scc, single run)
