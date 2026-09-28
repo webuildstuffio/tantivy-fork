@@ -4,6 +4,12 @@
 # so this vendors webuildstuffio/repo-review's metrics-reusable.yml
 # (snapshot job, language=rust), adapted from the megadj vendored copy.
 # Sync manually on changes.
+# Fixes synced from repo-review metrics-reusable.yml at f2c8454:
+#   - repo-review#94: sort-to-file instead of `sort | head` (SIGPIPE
+#     under pipefail on >500 candidates); fingerprints via NDJSON file
+#     + jq --slurpfile (avoids E2BIG on --argjson).
+#   - scc warn-and-continue: scc failure/empty output no longer kills
+#     the snapshot (LOC fields go to 0).
 # DRIFT RISK: this is a hand-maintained fork of the reusable workflow —
 # when repo-review's metrics-reusable.yml changes, port the delta here
 # (and to megadj's copy) or the two diverge silently.
@@ -139,13 +145,20 @@ jobs:
           JSCPD_RC=0; wait "$P_JSCPD" || JSCPD_RC=$?
           echo "--- collectors done"
           echo "    (scc=$SCC_RC qlty=$QLTY_RC jscpd=$JSCPD_RC) ---"
+          # scc can exit instantly with zero output on some trees
+          # (deterministic on worldmonitor-private — not a cache or
+          # transient issue). Never kill the snapshot: warn and continue
+          # with LOC fields at 0 so the remaining collectors' data
+          # (fingerprints, tests, duplication, qlty) still lands.
+          # Synced from repo-review metrics-reusable.yml at f2c8454 (#94).
+          if [ "$SCC_RC" -ne 0 ] || [ ! -s "$OUT/scc-files.csv" ]; then
+            echo "::warning::scc failed (exit $SCC_RC) or produced" >&2
+            echo "::warning::no output — LOC fields will be 0" >&2
+            : > "$OUT/scc-files.csv"
+          fi
           # --- parse ---
           # scc --by-file csv: Language,Provider(path),Filename,
           # Lines,Code,Comments,Blanks,Complexity,Bytes,ULOC
-          if [ "$SCC_RC" -ne 0 ] || [ ! -s "$OUT/scc-files.csv" ]; then
-            echo "::error::scc failed (exit $SCC_RC), no usable output" >&2
-            exit 1
-          fi
           eval "$(awk '
             function csv(line, fields,    i, ch, quoted, n, next_ch) {
               n=1; fields[n]=""; quoted=0
@@ -267,16 +280,26 @@ jobs:
             fi
           done
           fi
-          FP_JSON=$(sort -rn "$OUT/fp-candidates.tsv" \
-            | head -n "$FP_MAX_FILES" | cut -f2- | while IFS= read -r f; do
+          # Sort to a file, not through `sort | head`: under `set -o
+          # pipefail` head closing early on repos with >500 candidates
+          # gave sort SIGPIPE (exit 2) and killed the whole snapshot
+          # (#94). Sorting to a file avoids the pipeline entirely.
+          # Synced from repo-review metrics-reusable.yml at f2c8454.
+          sort -rn "$OUT/fp-candidates.tsv" -o "$OUT/fp-sorted.tsv"
+          # NDJSON to a file, not a shell variable: 500 fingerprints
+          # exceed the kernel's 128KB single-argument limit (E2BIG) when
+          # passed to jq via --argjson, so the payload step reads them
+          # with --slurpfile instead.
+          head -n "$FP_MAX_FILES" "$OUT/fp-sorted.tsv" \
+            | cut -f2- | while IFS= read -r f; do
             fp=$(sed -e 's/[[:space:]]*$//' -e '/^[[:space:]]*$/d' \
               "$f" 2>/dev/null | sha256sum | cut -d' ' -f1)
             lines=$(wc -l < "$f" 2>/dev/null || echo 0)
             jq -cn --arg path "$f" --arg fp "$fp" --argjson lines "$lines" \
               '{path:$path, fingerprint:$fp, lines:$lines}'
-          done | jq -cs '.')
-          [ -z "$FP_JSON" ] && FP_JSON='[]'
-          echo "fingerprints: $(printf '%s' "$FP_JSON" | jq 'length') files"
+          done > "$OUT/fp.ndjson"
+          FP_COUNT=$(grep -c . "$OUT/fp.ndjson" || true)
+          echo "fingerprints: $FP_COUNT files"
           jq -n \
             --arg repo "$REPO" \
             --arg sha "$COMMIT_SHA" \
@@ -291,7 +314,7 @@ jobs:
             --argjson duplication_pct "$DUPLICATION_PCT" \
             --argjson cc_per_kloc "$CC_PER_KLOC" \
             --argjson test_count "$TEST_COUNT" \
-            --argjson fingerprints "$FP_JSON" \
+            --slurpfile fingerprints "$OUT/fp.ndjson" \
             '{repo:$repo, commit_sha:$sha, taken_at:$taken_at,
               loc:$loc, loc_prod:$loc_prod, loc_test:$loc_test,
               loc_docs:$loc_docs, files:$files,
