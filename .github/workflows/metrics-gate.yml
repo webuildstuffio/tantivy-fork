@@ -1,0 +1,12 @@
+---
+name: metrics-gate
+"on":
+  pull_request:
+
+jobs:
+  gate:
+    uses: webuildstuffio/repo-review/.github/workflows/metrics-reusable.yml@8e5c8d19dda977b3a1b2be82e4b2262aba90f1f7  # yamllint disable-line rule:line-length
+    with:
+      run_snapshot: false
+      language: rust
+    secrets: inherit
