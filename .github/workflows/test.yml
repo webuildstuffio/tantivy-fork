@@ -45,7 +45,7 @@ jobs:
         run: cargo +nightly-2026-09-23 fmt --all -- --check
 
       - name: Check Stable Compilation
-        run: cargo build --all-features
+        run: cargo build --locked --all-features
 
       - name: Fetch benchmark fixtures
         # benches/index-bench.rs and benches/analyzer.rs use include_str!
@@ -62,12 +62,12 @@ jobs:
 
       - name: Check Bench Compilation
         run: >
-          cargo +nightly-2026-09-23 bench --no-run
+          cargo +nightly-2026-09-23 bench --locked --no-run
           --profile=dev --all-features
 
       - name: Check Clippy
         # actions-rs/clippy-check was archived; run clippy directly.
-        run: cargo +stable clippy --tests
+        run: cargo +stable clippy --locked --tests
 
   test:
     runs-on: ubuntu-latest
@@ -99,10 +99,10 @@ jobs:
           # compiling examples (as most of them rely on mmap) otherwise
           # run all
           if [ -z "${{ matrix.features.flags }}" ]; then
-            cargo +stable nextest run --lib --no-default-features \
+            cargo +stable nextest run --locked --lib --no-default-features \
               --verbose --workspace
           else
-            cargo +stable nextest run \
+            cargo +stable nextest run --locked \
               --features ${{ matrix.features.flags }} \
               --no-default-features --verbose --workspace
           fi
@@ -115,7 +115,7 @@ jobs:
           if [ -z "${{ matrix.features.flags }}" ]; then
             echo "no doctest for no feature flag"
           else
-            cargo +stable test --doc \
+            cargo +stable test --locked --doc \
               --features ${{ matrix.features.flags }} \
               --verbose --workspace
           fi

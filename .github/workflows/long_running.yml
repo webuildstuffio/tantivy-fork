@@ -28,6 +28,6 @@ jobs:
           override: true
 
     - name: Run indexing_unsorted
-      run: cargo test indexing_unsorted -- --ignored
+      run: cargo test --locked indexing_unsorted -- --ignored
     - name: Run indexing_sorted
-      run: cargo test indexing_sorted -- --ignored
+      run: cargo test --locked indexing_sorted -- --ignored
