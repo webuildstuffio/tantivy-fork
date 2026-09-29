@@ -10,7 +10,6 @@ use std::sync::{Arc, RwLock, Weak};
 
 use common::StableDeref;
 use file_watcher::FileWatcher;
-use fs4::fs_std::FileExt;
 #[cfg(all(feature = "mmap", unix))]
 pub use memmap2::Advice;
 use memmap2::Mmap;
@@ -485,8 +484,11 @@ impl Directory for MmapDirectory {
             .open(full_path)
             .map_err(LockError::wrap_io_error)?;
         if lock.is_blocking {
-            file.lock_exclusive().map_err(LockError::wrap_io_error)?;
-        } else if !file.try_lock_exclusive().map_err(|_| LockError::LockBusy)? {
+            // Fully-qualified to stay on fs4's trait: since Rust 1.89 the
+            // inherent `std::fs::File::lock` would shadow it, and this crate's
+            // MSRV is 1.86.
+            fs4::FileExt::lock(&file).map_err(LockError::wrap_io_error)?;
+        } else if fs4::FileExt::try_lock(&file).is_err() {
             return Err(LockError::LockBusy);
         }
         // dropping the file handle will release the lock.
