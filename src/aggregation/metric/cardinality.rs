@@ -350,7 +350,8 @@ impl<'de> Deserialize<'de> for CardinalityCollector {
 impl CardinalityCollector {
     fn new(salt: u8) -> Self {
         Self {
-            sketch: HllSketch::new(LG_K, HllType::Hll4),
+            sketch: HllSketch::new(LG_K, HllType::Hll4)
+                .expect("LG_K is a compile-time constant within the valid [4, 21] range"),
             salt,
         }
     }
@@ -374,10 +375,11 @@ impl CardinalityCollector {
     }
 
     pub(crate) fn merge_fruits(&mut self, right: CardinalityCollector) -> crate::Result<()> {
-        let mut union = HllUnion::new(LG_K);
+        let mut union =
+            HllUnion::new(LG_K).map_err(|err| TantivyError::InvalidArgument(err.to_string()))?;
         union.update(&self.sketch);
         union.update(&right.sketch);
-        self.sketch = union.get_result(HllType::Hll4);
+        self.sketch = union.to_sketch(HllType::Hll4);
         Ok(())
     }
 }
