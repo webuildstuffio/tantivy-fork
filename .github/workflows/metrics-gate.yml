@@ -4,6 +4,11 @@
 # so this vendors webuildstuffio/repo-review's metrics-reusable.yml
 # (gate job, language=rust), adapted from the megadj vendored copy.
 # Warn-only; never fails a PR. Sync manually on changes.
+# Sync point: repo-review metrics-reusable.yml @ 2dd688a (2026-09-30).
+# DELIBERATE DIVERGENCE: the reusable's gate now enforces tier gates by
+# default (owner order 2026-09-30 ended the #16 warn-only rollout); this
+# fork keeps the original warn-only complexity gate — porting the tier-gate
+# logic is an owner decision, not a mechanical sync.
 # DRIFT RISK: hand-maintained fork — port reusable-workflow changes here.
 name: metrics-gate
 "on":
@@ -80,8 +85,12 @@ jobs:
         if: steps.scope.outputs.scan == 'true'
         run: |
           set -uo pipefail
+          # qlty init before qlty metrics --functions (EXIT-99 fix): the
+          # update check hangs where the network blocks it; fall back for
+          # old qlty. Synced from repo-review metrics-reusable.yml @ 2dd688a.
           [ -f qlty.toml ] || \
-            qlty init -y --skip-plugins >/dev/null 2>&1
+            qlty init -y --skip-plugins --no-upgrade-check >/dev/null 2>&1 \
+            || qlty init -y --skip-plugins >/dev/null 2>&1
           files=$(git diff --name-only \
             "origin/${{ github.base_ref }}...HEAD" -- \
             '*.rs' '*.ts' '*.tsx' '*.js' '*.jsx' || true)
