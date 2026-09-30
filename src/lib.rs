@@ -386,7 +386,7 @@ pub mod tests {
     use query_grammar::{UserInputAst, UserInputLeaf, UserInputLiteral};
     use rand::distr::{Bernoulli, Uniform};
     use rand::rngs::StdRng;
-    use rand::{Rng, SeedableRng};
+    use rand::{Rng, RngExt, SeedableRng};
     use time::OffsetDateTime;
 
     use crate::collector::tests::TEST_COLLECTOR_WITH_SCORE;

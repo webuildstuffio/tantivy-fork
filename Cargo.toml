@@ -258,6 +258,7 @@ version = "0.5.4"
 
 [dependencies.datasketches]
 version = "0.5.0"
+features = ["hll"]
 
 [dependencies.downcast-rs]
 version = "2.0.1"
@@ -316,6 +317,7 @@ version = "1.10.0"
 
 [dependencies.oneshot]
 version = "0.2.1"
+features = ["std", "async"]
 
 [dependencies.query-grammar]
 version = "0.26.0"

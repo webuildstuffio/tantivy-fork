@@ -19,3 +19,4 @@ variable
 # not committed to the fork.
 /benches/*.json
 /benches/alice.txt
+librust_out.rlib
