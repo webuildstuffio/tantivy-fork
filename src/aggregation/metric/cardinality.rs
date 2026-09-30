@@ -350,8 +350,7 @@ impl<'de> Deserialize<'de> for CardinalityCollector {
 impl CardinalityCollector {
     fn new(salt: u8) -> Self {
         Self {
-            sketch: HllSketch::new(LG_K, HllType::Hll4)
-                .expect("valid HLL config"),
+            sketch: HllSketch::new(LG_K, HllType::Hll4).expect("valid HLL config"),
             salt,
         }
     }

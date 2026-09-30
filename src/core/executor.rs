@@ -121,7 +121,8 @@ impl Executor {
                     let _ = sender.send(task_result);
                 });
 
-                let res = receiver.map(|res| res.map_err(|_| ()));
+                let res =
+                    std::future::IntoFuture::into_future(receiver).map(|res| res.map_err(|_| ()));
                 Either::Right(res)
             }
         }
