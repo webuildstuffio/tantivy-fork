@@ -304,7 +304,7 @@ mod tests {
         let index = Index::create_in_ram(schema);
         let mut writer: IndexWriter =
             index.writer_with_num_threads(3, 3 * MEMORY_BUDGET_NUM_BYTES_MIN)?;
-        use rand::Rng;
+        use rand::{Rng, RngExt};
         let mut rng = rand::rng();
         writer.set_merge_policy(Box::new(NoMergePolicy));
         for _ in 0..3_000 {

@@ -488,7 +488,7 @@ mod tests {
     use columnar::Dictionary;
     use rand::distr::Uniform;
     use rand::prelude::SliceRandom;
-    use rand::{rng, Rng};
+    use rand::{rng, Rng, RngExt};
 
     use super::{FacetCollector, FacetCounts};
     use crate::collector::facet_collector::compress_mapping;

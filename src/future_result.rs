@@ -1,4 +1,4 @@
-use std::future::Future;
+use std::future::{Future, IntoFuture};
 use std::pin::Pin;
 use std::task::Poll;
 
@@ -21,7 +21,8 @@ pub struct FutureResult<T> {
 enum Inner<T> {
     FailedBeforeStart(Option<TantivyError>),
     InProgress {
-        receiver: oneshot::Receiver<crate::Result<T>>,
+        receiver: Option<oneshot::Receiver<crate::Result<T>>>,
+        async_receiver: Option<oneshot::AsyncReceiver<crate::Result<T>>>,
         error_msg_if_failure: &'static str,
     },
 }
@@ -40,7 +41,8 @@ impl<T> FutureResult<T> {
     ) -> (Self, oneshot::Sender<crate::Result<T>>) {
         let (sender, receiver) = oneshot::channel();
         let inner: Inner<T> = Inner::InProgress {
-            receiver,
+            receiver: Some(receiver),
+            async_receiver: None,
             error_msg_if_failure,
         };
         (FutureResult { inner }, sender)
@@ -55,11 +57,15 @@ impl<T> FutureResult<T> {
             Inner::InProgress {
                 receiver,
                 error_msg_if_failure,
-            } => receiver.recv().unwrap_or_else(|_| {
-                Err(crate::TantivyError::SystemError(
-                    error_msg_if_failure.to_string(),
-                ))
-            }),
+                ..
+            } => receiver
+                .expect("receiver already consumed")
+                .recv()
+                .unwrap_or_else(|_| {
+                    Err(crate::TantivyError::SystemError(
+                        error_msg_if_failure.to_string(),
+                    ))
+                }),
         }
     }
 }
@@ -73,18 +79,27 @@ impl<T> Future for FutureResult<T> {
                 Inner::FailedBeforeStart(err) => Poll::Ready(Err(err.take().unwrap())),
                 Inner::InProgress {
                     receiver,
+                    async_receiver,
                     error_msg_if_failure,
-                } => match Future::poll(Pin::new_unchecked(receiver), cx) {
-                    Poll::Ready(oneshot_res) => {
-                        let res = oneshot_res.unwrap_or_else(|_| {
-                            Err(crate::TantivyError::SystemError(
-                                error_msg_if_failure.to_string(),
-                            ))
-                        });
-                        Poll::Ready(res)
+                } => {
+                    let ar = async_receiver.get_or_insert_with(|| {
+                        receiver
+                            .take()
+                            .expect("receiver already consumed")
+                            .into_future()
+                    });
+                    match Future::poll(Pin::new_unchecked(ar), cx) {
+                        Poll::Ready(oneshot_res) => {
+                            let res = oneshot_res.unwrap_or_else(|_| {
+                                Err(crate::TantivyError::SystemError(
+                                    error_msg_if_failure.to_string(),
+                                ))
+                            });
+                            Poll::Ready(res)
+                        }
+                        Poll::Pending => Poll::Pending,
                     }
-                    Poll::Pending => Poll::Pending,
-                },
+                }
             }
         }
     }
