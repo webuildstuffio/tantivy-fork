@@ -1,0 +1,15 @@
+---
+# yamllint config for tantivy-fork
+# Relaxed line-length (120) for workflow files with long URLs/env vars.
+# Comments disabled: Prettier writes single-space inline comments.
+extends: default
+
+rules:
+  comments: disable
+  line-length:
+    max: 400
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+  document-start: disable
+  truthy:
+    allowed-values: ["true", "false", "on"]

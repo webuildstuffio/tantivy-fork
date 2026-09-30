@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     steps:
       - uses: actions/checkout@v7
 
@@ -70,7 +70,7 @@ jobs:
         run: cargo +stable clippy --locked --tests
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     strategy:
       matrix:
         features:
