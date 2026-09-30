@@ -2,7 +2,7 @@ name: Long running tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 env:
   CARGO_TERM_COLOR: always
@@ -16,18 +16,14 @@ concurrency:
 jobs:
   test:
 
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
 
     steps:
-    - uses: actions/checkout@v7
-    - name: Install stable
-      uses: actions-rs/toolchain@v1
-      with:
-          toolchain: stable
-          profile: minimal
-          override: true
+      - uses: actions/checkout@v7
+      - name: Install stable
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Run indexing_unsorted
-      run: cargo test --locked indexing_unsorted -- --ignored
-    - name: Run indexing_sorted
-      run: cargo test --locked indexing_sorted -- --ignored
+      - name: Run indexing_unsorted
+        run: cargo test --locked indexing_unsorted -- --ignored
+      - name: Run indexing_sorted
+        run: cargo test --locked indexing_sorted -- --ignored
