@@ -11,8 +11,10 @@ product is the patched `tantivy` crate. Part of the webuildstuffio org.
 - **rustfmt runs on pinned nightly `nightly-2026-09-23`** — fmt output drifts with nightly
   releases, so a floating nightly re-breaks `check` on unrelated PRs. Re-pin deliberately
   (rationale in `.github/workflows/test.yml`).
-- Tests run under [cargo-nextest](https://nexte.st); CI uses three feature matrices:
-  all-features, `quickwit`, and `--no-default-features`.
+- Tests run under [cargo-nextest](https://nexte.st); CI runs three feature matrices:
+  `all` (mmap, stopwords, lz4/zstd-compression, failpoints, stemmer), `quickwit`
+  (mmap, quickwit, failpoints), and `none` (`--no-default-features` only). Full
+  `--all-features` is compile-checked (and benches built) but not nextest-run.
 - `Cargo.toml` is the **crates.io-normalized manifest** (auto-generated header): this repo tracks
   the published crate tarball, so sibling crates (`tantivy-columnar`, `common`, `stacker`,
   `query-grammar`, …) resolve from **crates.io, not local paths**. `Cargo.toml.orig` is vestigial
@@ -20,23 +22,31 @@ product is the patched `tantivy` crate. Part of the webuildstuffio org.
 
 ## Fork delta (keep it minimal)
 
-Everything except the two files below is vendored upstream 0.26.0. A minimal diff vs upstream is
+Everything except the files below is vendored upstream 0.26.0. A minimal diff vs upstream is
 the fork's strategy for absorbing future upstream releases — keep changes out of other files, and
-mark touched lines with the fork's ticket tags (`INF-135:`, `SCR-310:`, `SPD-107:`), as existing
-code does.
+mark touched lines with the fork's ticket tags (`INF-135:`, `SCR-310:`, `SPD-107:`), as the
+algorithm files do.
 
 1. `src/query/bm25.rs` — `Bm25Params { k1, b, delta }`; thread-local
    `set_thread_bm25_params()` / `reset_thread_bm25_params()` (INF-135); BM25+ delta lower bound
    in `tf_factor` (SCR-310, Lü & Callan 2011).
 2. `src/query/boolean_query/block_wand.rs` — hybrid top-k pruning (SPD-107): term-centric
    **MaxScore** when there are ≥ `MAXSCORE_MIN_TERMS` (4) scorers, Block-Max WAND below that.
+3. Export shims — `src/query/mod.rs` re-exports `Bm25Params`, `set_thread_bm25_params`,
+   `reset_thread_bm25_params` (INF-135); `src/lib.rs` adds a test-only explicit
+   `extern crate serde_json` (needed once lru 0.18 is in the tree).
+4. Inlining hints — `#[inline(always)]` on hot scorer paths in
+   `src/query/term_query/term_scorer.rs`, `src/query/intersection.rs`, and
+   `src/query/union/buffered_union.rs`.
 
 Upstream architecture overview: `ARCHITECTURE.md` (unmodified upstream doc).
 
 ## Commands
 
 - `make test` — `cargo test --tests --lib` (no examples; they need fetched fixtures).
-- `make fmt` — nightly rustfmt. CI gates on `cargo +nightly-2026-09-23 fmt --all -- --check`.
+- `make fmt` — rustfmt via `cargo +nightly fmt --all` (**floating** nightly: re-checks CI
+  with the pinned `cargo +nightly-2026-09-23 fmt --all -- --check`). For CI-identical output
+  run the pinned command directly.
   Style: width 120, module-granularity imports, std-external-crate grouping (`rustfmt.toml`).
 - `cargo +stable clippy --locked --tests` — CI gate.
 - Full CI = `cargo nextest run --locked` × feature matrix + doctests + bench compile.
@@ -83,9 +93,11 @@ Upstream architecture overview: `ARCHITECTURE.md` (unmodified upstream doc).
 - **Pruning correctness**: block-max upper bounds, pivot selection, termination (pivot revisits
   are bounded by `scorers.len() - 1`), and off-by-one in block seeking (`last_doc_in_block + 1`)
   — mistakes here produce *silently wrong top-k*, not panics.
-- **Diff discipline**: changes outside the two fork files deserve extra scrutiny; ask whether the
+- **Diff discipline**: changes outside the files listed in Fork delta above deserve extra scrutiny; ask whether the
   change could live in `bm25.rs`/`block_wand.rs` behind a fork marker instead. Watch for edits to
   on-disk formats (`src/postings/`, `src/termdict/`, `src/store/` serializers) — those break
   existing indexes with no in-place migration.
-- **Thread-safety**: fork state is thread-local by design (a search is bounded to one thread);
-  don't replace it with globals/atomics without revisiting the MegaMem call pattern.
+- **Thread-safety**: fork state is thread-local by design — the params are read when
+  `query.weight()` is constructed on the caller thread, before `Executor::map` fans
+  per-segment collection out to other threads; don't replace it with globals/atomics
+  without revisiting the MegaMem call pattern.
