@@ -3,7 +3,7 @@ use binggan::{black_box, InputGroup, PeakMemAlloc, INSTRUMENTED_SYSTEM};
 use rand::distr::weighted::WeightedIndex;
 use rand::rngs::StdRng;
 use rand::seq::IndexedRandom;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 use rand_distr::Distribution;
 use serde_json::json;
 use tantivy::aggregation::agg_req::Aggregations;
