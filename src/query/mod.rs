@@ -37,7 +37,10 @@ pub use query_grammar::Occur;
 pub use self::all_query::{AllQuery, AllScorer, AllWeight};
 pub use self::automaton_weight::AutomatonWeight;
 pub use self::bitset::BitSetDocSet;
-pub use self::bm25::{Bm25Params, Bm25StatisticsProvider, Bm25Weight, reset_thread_bm25_params, set_thread_bm25_params};
+pub use self::bm25::{
+    reset_thread_bm25_params, set_thread_bm25_params, Bm25Params, Bm25StatisticsProvider,
+    Bm25Weight,
+};
 pub use self::boolean_query::{BooleanQuery, BooleanWeight};
 pub use self::boost_query::{BoostQuery, BoostWeight};
 pub use self::const_score_query::{ConstScoreQuery, ConstScorer};

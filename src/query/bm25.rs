@@ -14,7 +14,8 @@ thread_local! {
 
 /// INF-135: Set per-workspace BM25 parameters for the current thread before executing a search.
 /// Must be reset to default after the search completes to avoid leaking into subsequent searches.
-/// Usage: `set_thread_bm25_params(Bm25Params { k1: 1.2, b: 0.20 })`; run search; `reset_thread_bm25_params()`.
+/// Usage: `set_thread_bm25_params(Bm25Params { k1: 1.2, b: 0.20 })`; run search;
+/// `reset_thread_bm25_params()`.
 pub fn set_thread_bm25_params(params: Bm25Params) {
     CURRENT_BM25_PARAMS.with(|p| p.set(params));
 }
@@ -113,7 +114,11 @@ pub struct Bm25Params {
 
 impl Default for Bm25Params {
     fn default() -> Self {
-        Self { k1: K1_DEFAULT, b: B_DEFAULT, delta: 0.0 }
+        Self {
+            k1: K1_DEFAULT,
+            b: B_DEFAULT,
+            delta: 0.0,
+        }
     }
 }
 
@@ -193,7 +198,11 @@ impl Bm25Weight {
                 idf_sum += idf(term_doc_freq, total_num_docs);
             }
             let idf_explain = Explanation::new("idf", idf_sum);
-            Ok(Bm25Weight::new_with_params(idf_explain, average_fieldnorm, params))
+            Ok(Bm25Weight::new_with_params(
+                idf_explain,
+                average_fieldnorm,
+                params,
+            ))
         }
     }
 
@@ -204,7 +213,12 @@ impl Bm25Weight {
         avg_fieldnorm: Score,
     ) -> Bm25Weight {
         // INF-135: read per-workspace k1/b from thread-local.
-        Self::for_one_term_with_params(term_doc_freq, total_num_docs, avg_fieldnorm, thread_bm25_params())
+        Self::for_one_term_with_params(
+            term_doc_freq,
+            total_num_docs,
+            avg_fieldnorm,
+            thread_bm25_params(),
+        )
     }
 
     /// Construct a [Bm25Weight] for a single term with custom BM25 parameters.
@@ -244,7 +258,11 @@ impl Bm25Weight {
 
     /// INF-135: internal constructor with explicit k1/b parameters.
     /// SCR-310: also stores delta for BM25+ scoring.
-    pub(crate) fn new_with_params(idf_explain: Explanation, average_fieldnorm: Score, params: Bm25Params) -> Bm25Weight {
+    pub(crate) fn new_with_params(
+        idf_explain: Explanation,
+        average_fieldnorm: Score,
+        params: Bm25Params,
+    ) -> Bm25Weight {
         let weight = idf_explain.value() * (1.0 + params.k1);
         Bm25Weight {
             idf_explain: Some(idf_explain),
